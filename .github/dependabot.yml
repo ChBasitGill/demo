@@ -1,34 +1,31 @@
-# Basic `dependabot.yml` file with
-# minimum configuration for three package managers
+# Dependabot configuration for an Nx Angular project.
+# package.json lives at the repo root, so all npm entries use directory: "/".
+# A companion rename workflow (.github/workflows/rename-dependabot-branch.yml)
+# shortens every Dependabot branch to  bot/<package>-<version>  (≤ 45 chars).
 
 version: 2
 updates:
-  # Enable version updates for npm
+  # ── npm / yarn ────────────────────────────────────────────────────────────
+  # Nx projects keep a single root package.json; use "/" so the directory
+  # segment is not added to the branch name.
   - package-ecosystem: "npm"
-    # Look for `package.json` and `lock` files in the `javascript` directory
-    directory: "/javascript"
-    # Check the npm registry for updates every day (weekdays)
+    directory: "/"
     schedule:
       interval: "daily"
-    # Use dashes instead of slashes to shorten branch names, e.g.
-    # dependabot-npm_and_yarn-hot-formula-parser-4.0.0
+    # Separate path parts with "-" so the raw branch is always Docker-tag-safe.
     pull-request-branch-name:
       separator: "-"
 
-  # Enable version updates for Docker
+  # ── Docker ────────────────────────────────────────────────────────────────
   - package-ecosystem: "docker"
-    # Look for a `Dockerfile` in the `root` directory
     directory: "/"
-    # Check for updates once a week
     schedule:
       interval: "weekly"
     pull-request-branch-name:
       separator: "-"
 
-  # Enable version updates for GitHub Actions
+  # ── GitHub Actions ────────────────────────────────────────────────────────
   - package-ecosystem: "github-actions"
-    # Workflow files stored in the default location of `.github/workflows`
-    # You don't need to specify `/.github/workflows` for `directory`. You can use `directory: "/"`.
     directory: "/"
     schedule:
       interval: "weekly"

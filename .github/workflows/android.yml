@@ -22,6 +22,10 @@ jobs:
         BRANCH="${{ github.head_ref || github.ref_name }}"
         # Replace characters that are invalid in Docker tags with dashes
         SAFE="${BRANCH//[^a-zA-Z0-9._-]/-}"
+        # Docker tags must not start with '.' or '-'; strip any such leading chars
+        SAFE=$(echo "$SAFE" | sed 's/^[.-]*//')
+        # If stripping produced an empty string, fall back to a safe default
+        SAFE="${SAFE:-x}"
         # Truncate to 45 characters
         echo "value=${SAFE:0:45}" >> "$GITHUB_OUTPUT"
 
