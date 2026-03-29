@@ -1,0 +1,54 @@
+name: Rename Dependabot Branch
+
+# Runs as soon as Dependabot opens a PR.
+# Renames the branch from the verbose default:
+#   dependabot-npm_and_yarn-hot-formula-parser-4.0.0
+# to a short form that keeps only the package-version segment:
+#   bot/hot-formula-parser-4.0.0   (≤ 45 characters)
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  rename-branch:
+    # Only act on PRs opened by Dependabot.
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write        # needed to rename the branch
+      pull-requests: write   # needed so the renamed branch stays linked to the PR
+
+    steps:
+      - name: Rename to bot/<package-version> (max 45 chars)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ github.head_ref }}
+          REPO: ${{ github.repository }}
+        run: |
+          # dependabot.yml uses separator: "-", so the branch never contains "/"
+          # and is always safe to embed directly in a URL path.
+          #
+          # Branch anatomy (separator "-"):
+          #   dependabot  -  npm_and_yarn  -  hot-formula-parser-4.0.0
+          #   ^^^^^^^^^      ^^^^^^^^^^^^     ^^^^^^^^^^^^^^^^^^^^^^^^^
+          #   prefix (1)     ecosystem (2)    package-version  ← we want this part
+          #
+          # Ecosystem names use underscores (npm_and_yarn, github_actions),
+          # so #*- reliably strips exactly up to the first real "-" delimiter.
+          REMAINDER="${BRANCH#*-}"       # strip "dependabot-"   → npm_and_yarn-hot-formula-parser-4.0.0
+          REMAINDER="${REMAINDER#*-}"    # strip "<ecosystem>-"  → hot-formula-parser-4.0.0
+
+          # Build and cap the new branch name at 45 characters.
+          NEW="bot/${REMAINDER}"
+          NEW="${NEW:0:45}"
+
+          echo "Original : $BRANCH"
+          echo "Renamed  : $NEW"
+
+          gh api \
+            --method POST \
+            -H "Accept: application/vnd.github+json" \
+            "/repos/${REPO}/branches/${BRANCH}/rename" \
+            -f new_name="${NEW}"
