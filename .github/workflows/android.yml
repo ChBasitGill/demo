@@ -13,6 +13,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v6
+
+    # Derive a Docker-safe image tag from the branch name, capped at 45 characters.
+    # Uses head_ref (PR source branch) when available, otherwise ref_name (push).
+    - name: Compute image tag
+      id: image_tag
+      run: |
+        BRANCH="${{ github.head_ref || github.ref_name }}"
+        # Replace characters that are invalid in Docker tags with dashes
+        SAFE="${BRANCH//[^a-zA-Z0-9._-]/-}"
+        # Truncate to 45 characters
+        echo "value=${SAFE:0:45}" >> "$GITHUB_OUTPUT"
+
     - name: set up JDK 1.8
       uses: actions/setup-java@v5
       with:
